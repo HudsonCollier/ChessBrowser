@@ -28,6 +28,8 @@ namespace ChessBrowser.Components.Pages
     /// </summary>
     private int    Progress = 0;
 
+
+        private List<ChessGame> chessGames;
     /// <summary>
     /// This method runs when a PGN file is selected for upload.
     /// Given a list of lines from the selected file, parses the 
@@ -40,10 +42,11 @@ namespace ChessBrowser.Components.Pages
       // assuimg you've filled in the credentials in the GUI
       string connection = GetConnectionString();
 
-      // TODO:
-      //   Parse the provided PGN data
-      //   We recommend creating separate libraries to represent chess data and load the file
-
+            // TODO:
+            //   Parse the provided PGN data
+            //   We recommend creating separate libraries to represent chess data and load the file
+            PGNParser pgnData = new PGNParser(PGNFileLines);
+            chessGames = pgnData.returnChessGames();
 
       using (MySqlConnection conn = new MySqlConnection(connection))
       {
@@ -51,16 +54,53 @@ namespace ChessBrowser.Components.Pages
         {
           // Open a connection
           conn.Open();
+                    MySqlCommand command;
+                    int size = chessGames.Count;
+                    int index = 0;
+                    // TODO:
+                    //   Iterate through your data and generate appropriate insert commands
+                    foreach (var game in chessGames) {
 
-          // TODO:
-          //   Iterate through your data and generate appropriate insert commands
-                   
-          // TODO:
-          //   Update the Progress member variable every time progress has been made
-          //   (e.g. one iteration of your upload loop)
-          //   This will update the progress bar in the GUI
-          //   Its value should be an integer representing a percentage of completion
-          Progress = 0;
+                        //add events
+                        command = conn.CreateCommand();
+                        command.CommandText = "INSERT IGNORE INTO Events(Name, Site, Date) VALUES(@name, @site, @date);";
+                        command.Parameters.AddWithValue("@site", game.site);
+                        command.Parameters.AddWithValue("@name", game.eventName);
+                        command.Parameters.AddWithValue("@date", game.stringDate);
+                        command.ExecuteNonQuery();
+
+                        //add white players
+                        command = conn.CreateCommand();
+                        command.CommandText = "INSERT IGNORE INTO Events(Name, Elo) VALUES(@name, @elo) WHERE Elo < @elo;";
+                        command.Parameters.AddWithValue("@name", game.whitePlayer);
+                        command.Parameters.AddWithValue("@elo", game.whiteElo);
+                        command.ExecuteNonQuery();
+
+                        //add black players
+                        command = conn.CreateCommand();
+                        command.CommandText = "INSERT IGNORE INTO Events(Name, Elo) VALUES(@name, @elo) WHERE Elo < @elo;";
+                        command.Parameters.AddWithValue("@name", game.blackPlayer);
+                        command.Parameters.AddWithValue("@elo", game.blackElo);
+                        command.ExecuteNonQuery();
+
+
+
+                        // adding games
+                        command = conn.CreateCommand();
+                        command.CommandText = "INSERT IGNORE INTO Games (Round, Result, Moves, BlackPlayer, WhitePlayer, eID) VALUES(@round, @result, @moves, @blackPlayer, @whitePlayer, @eID);";
+                        command.Parameters.AddWithValue("@round", game.round);
+                        command.Parameters.AddWithValue("@result", game.result);
+                        command.Parameters.AddWithValue("@moves", game.moves);
+                        command.Parameters.AddWithValue("@blackPlayer", game.blackPlayer);
+                        command.Parameters.AddWithValue("@whitePlayer", game.whitePlayer);
+                        //command.Parameters.AddWithValue("@eId", game.eID);
+                        command.ExecuteNonQuery();
+                        index++;
+
+                        Progress = (index / size);
+                    }
+           
+                  
 
           // This tells the GUI to redraw after you update Progress (this should go inside your loop)
           await InvokeAsync(StateHasChanged);

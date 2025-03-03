@@ -6,36 +6,40 @@ namespace ChessBrowser.Components
 {
 	public class PGNParser
 	{
-		public List<ChessGame> chessGames;
-		public PGNParser(string pgnFilePath)
+		private List<ChessGame> chessGames;
+		public PGNParser(string[] pgnFileArray)
 		{
 			chessGames = new List<ChessGame>();
-			using (StreamReader reader = new StreamReader(pgnFilePath))
-			{
+            for (int i = 0; i < pgnFileArray.Length; i++)
+            {
                 ChessGame game = new ChessGame();
-                string line;
-				while ((line = reader.ReadLine()) != null)
-				{
+                string line = pgnFileArray[i];
+               
                     if (line.StartsWith('['))
                         populateAtribute(line, game);
-  
-					if(line.StartsWith("1."))
+
+                    if (line.StartsWith("1."))
                     {
                         string moves = "";
-                        string moveLine;
-                        while ((moveLine = reader.ReadLine()) != "")
-                            moves += moveLine;
-                        
+                        int j;
+                        for (j = i; j < pgnFileArray.Length; j++)
+                        {
+                        if (pgnFileArray[j].StartsWith("["))
+                            break;
+                        moves += pgnFileArray[j];
+                        }
+
+                        i = i + j - 1;
                         game.moves = moves;
 
                         chessGames.Add(game);
                         game = new ChessGame();
                     }
-                   
-				}
+
+            }
 
 
-			}
+			
 
 
 		}
@@ -53,6 +57,8 @@ namespace ChessBrowser.Components
                 game.stringDate = getValue(line);
             else if (dataType.Contains("Round"))
                 game.round = getValue(line);
+            else if (dataType.Contains("Result")) 
+                game.result = convertToResult(getValue(line));
             else if (dataType.Contains("White "))
                 game.whitePlayer = getValue(line);
             else if (dataType.Contains("Black "))
@@ -63,6 +69,18 @@ namespace ChessBrowser.Components
                 game.blackElo = Int32.Parse(getValue(line));
            
 
+
+
+        }
+
+        private char convertToResult(string line)
+        {
+            if (line.StartsWith("1-"))
+                return 'W';
+            if (line.StartsWith("0"))
+                return 'B';
+            else
+                return 'D';
 
 
         }
@@ -89,6 +107,11 @@ namespace ChessBrowser.Components
 
 			return line;
 
+        }
+
+        public List<ChessGame> returnChessGames()
+        {
+            return chessGames;
         }
 	}
 }
