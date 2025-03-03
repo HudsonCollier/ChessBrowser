@@ -35,7 +35,7 @@ namespace ChessBrowser
             PGNParser parse = new PGNParser("C:\\Mac\\Home\\Desktop\\Databases\\ChessBrowserRepo\\ChessBrowser\\TextFile.txt");
             foreach (ChessGame game in parse.chessGames)
                 Console.WriteLine(game.printEvent());
-     a
+     
 
         }
     }
