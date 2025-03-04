@@ -10,15 +10,16 @@ namespace ChessBrowser.Components
 		public PGNParser(string[] pgnFileArray)
 		{
 			chessGames = new List<ChessGame>();
+            ChessGame game = new ChessGame();
             for (int i = 0; i < pgnFileArray.Length; i++)
             {
-                ChessGame game = new ChessGame();
+              
                 string line = pgnFileArray[i];
                
                     if (line.StartsWith('['))
                         populateAtribute(line, game);
 
-                    if (line.StartsWith("1."))
+                    else if (line.StartsWith("1."))
                     {
                         string moves = "";
                         int j;
@@ -29,7 +30,7 @@ namespace ChessBrowser.Components
                         moves += pgnFileArray[j];
                         }
 
-                        i = i + j - 1;
+                        i = j - 1;
                         game.moves = moves;
 
                         chessGames.Add(game);

@@ -1,4 +1,14 @@
-﻿4. IIFL Wealth Mumbai Op
+﻿info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5095
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Mac\Home\Desktop\Databases\ChessBrowserRepo\ChessBrowser
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+4. IIFL Wealth Mumbai Op
 Australian Open 2019
 4. IIFL Wealth Mumbai Op
 Hastings Masters 2018-19
@@ -973,7 +983,3 @@ Sunway Sitges Open 2018
 25. Zadar Open A 2018
 87. ch-UKR 2018
 25. Zadar Open A 2018
-
-C:\Mac\Home\Desktop\Databases\ChessBrowserRepo\ChessBrowser\bin\Debug\net9.0\ChessBrowser.exe (process 5620) exited with code 0 (0x0).
-To automatically close the console when debugging stops, enable Tools->Options->Debugging->Automatically close the console when debugging stops.
-Press any key to close this window . . .
