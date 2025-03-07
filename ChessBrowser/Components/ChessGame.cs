@@ -1,8 +1,14 @@
-﻿using System;
+﻿// Implementation by Hudson Collier and Ian Kerr
+// Last Edited: Mach 7, 2025
+
+using System;
 using System.Collections;
 
 namespace ChessBrowser.Components
 {
+    /// <summary>
+    /// Holds all of the attributes for a chess game 
+    /// </summary>
     public class ChessGame
     {
         public string whitePlayer { get; set; }
@@ -15,28 +21,11 @@ namespace ChessBrowser.Components
         public char result { get; set; }
         public string stringDate { get; set; }
         public string moves { get; set; }
+        public ChessGame() {}
 
-        //public ChessGame(string whitePlayer, string blackPlayer, string eventName, string site, string round, int whiteElo, int blackElo, string result, string stringDate, string moves)
+        //public string printEvent()
         //{
-        //    this.whitePlayer = whitePlayer;
-        //    this.blackPlayer = blackPlayer;
-        //    this.eventName = eventName;
-        //    this.site = site;
-        //    this.round = round;
-        //    this.whiteElo = whiteElo;
-        //    this.blackElo = blackElo;
-        //    this.result = result;
-        //    this.stringDate = stringDate;
-        //    this.moves = moves;
+        //    return this.eventName;
         //}
-        public ChessGame()
-        {
-
-        }
-
-        public string printEvent()
-        {
-            return this.eventName;
-        }
     }
 }
