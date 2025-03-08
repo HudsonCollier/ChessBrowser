@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components.Forms;
 using System.Diagnostics;
 using MySql.Data.MySqlClient;
 using System.Collections.Specialized;
+using System.Reflection;
 
 namespace ChessBrowser.Components.Pages
 {
@@ -13,17 +14,17 @@ namespace ChessBrowser.Components.Pages
         /// <summary>
         /// Bound to the Unsername form input
         /// </summary>
-        private string Username = "u1424286";
+        private string Username = "";
 
         /// <summary>
         /// Bound to the Password form input
         /// </summary>
-        private string Password = "March2500";
+        private string Password = "";
 
         /// <summary>
         /// Bound to the Database form input
         /// </summary>
-        private string Database = "Team155Chess";
+        private string Database = "";
 
         /// <summary>
         /// Represents the progress percentage of the current
@@ -64,63 +65,37 @@ namespace ChessBrowser.Components.Pages
 
                     foreach (var game in chessGames)
                     {
+                        // Insert into events
                         command = conn.CreateCommand();
-                        command.CommandText = "INSERT IGNORE INTO Events(Name, Site, Date) VALUES(@name, @site, @date);";
-                        command.Parameters.AddWithValue("@site", game.site);
-                        command.Parameters.AddWithValue("@name", game.eventName);
-                        command.Parameters.AddWithValue("@date", game.stringDate);
-                        command.ExecuteNonQuery();
-
-                        //add white player
-                        command = conn.CreateCommand();
-                        command.CommandText = "INSERT INTO Players(Name, Elo) VALUES(@name, @elo) " +
-                                              "ON DUPLICATE KEY UPDATE Elo = GREATEST(Elo, @elo);";
-                        command.Parameters.AddWithValue("@name", game.whitePlayer);
-                        command.Parameters.AddWithValue("@elo", game.whiteElo);
-                        command.ExecuteNonQuery();
+                        command.CommandText = "INSERT IGNORE INTO Events(Name, Site, Date) VALUES(@eName, @eSite, @eDate);";
+                        
+                        // Add white player
+                        command.CommandText += "INSERT IGNORE INTO Players(Name, Elo) VALUES(@wName, @wElo) " +
+                                              "ON DUPLICATE KEY UPDATE Elo = GREATEST(Elo, @wElo);";
+                       
 
                         // Add black player
-                        command = conn.CreateCommand();
-                        command.CommandText = "INSERT INTO Players(Name, Elo) VALUES(@name, @elo) " +
-                                              "ON DUPLICATE KEY UPDATE Elo = GREATEST(Elo, @elo);";
-                        command.Parameters.AddWithValue("@name", game.blackPlayer);
-                        command.Parameters.AddWithValue("@elo", game.blackElo);
-                        command.ExecuteNonQuery();
-
-                        command = conn.CreateCommand();
-                        command.CommandText = "SELECT eID FROM Events WHERE Name = @name AND Site = @site AND Date = @date;";
-                        command.Parameters.AddWithValue("@name", game.eventName);
-                        command.Parameters.AddWithValue("@site", game.site);
-                        command.Parameters.AddWithValue("@date", game.stringDate);
-
-                        object result = command.ExecuteScalar();
-                        int eID = (result != null) ? Convert.ToInt32(result) : 0;
-
-                        command = conn.CreateCommand();
-                        command.CommandText = "SELECT pID FROM Players WHERE Name = @name;";
-                        command.Parameters.AddWithValue("@name", game.blackPlayer);
-
-                        result = command.ExecuteScalar();
-                        int bID = (result != null) ? Convert.ToInt32(result) : 0;
-
-                        command = conn.CreateCommand();
-                        command.CommandText = "SELECT pID FROM Players WHERE Name = @name;";
-                        command.Parameters.AddWithValue("@name", game.whitePlayer);
-
-                        result = command.ExecuteScalar();
-                        int wID = (result != null) ? Convert.ToInt32(result) : 0;
-
-                        Console.WriteLine(wID);
-
+                        command.CommandText += "INSERT IGNORE INTO Players(Name, Elo) VALUES(@bName, @bElo) " +
+                                              "ON DUPLICATE KEY UPDATE Elo = GREATEST(Elo, @bElo);";
+                        
+                     
                         // adding games
-                        command = conn.CreateCommand();
-                        command.CommandText = "INSERT INTO Games (Round, Result, Moves, BlackPlayer, WhitePlayer, eID) VALUES(@round, @result, @moves, @blackPlayer, @whitePlayer, @eID);";
+                        command.CommandText += "INSERT IGNORE INTO Games (Round, Result, Moves, BlackPlayer, WhitePlayer, eID) VALUES(@round, @result, @moves, (SELECT pID FROM Players WHERE Name = @bName), (SELECT pID FROM Players WHERE Name = @wName), (SELECT eID FROM Events WHERE Name = @eName AND Site = @eSite AND Date = @eDate));";
+                        // Parameters for adding basic game info
                         command.Parameters.AddWithValue("@round", game.round);
                         command.Parameters.AddWithValue("@result", game.result);
                         command.Parameters.AddWithValue("@moves", game.moves);
-                        command.Parameters.AddWithValue("@blackPlayer", bID);
-                        command.Parameters.AddWithValue("@whitePlayer", wID);
-                        command.Parameters.AddWithValue("@eId", eID);
+                        // parameters for adding player info
+                        command.Parameters.AddWithValue("@bName", game.blackPlayer);
+                        command.Parameters.AddWithValue("@wName", game.whitePlayer);
+                        command.Parameters.AddWithValue("@wElo", game.whiteElo);
+                        command.Parameters.AddWithValue("@bElo", game.blackElo);
+                        // parameters for finding eID
+                        command.Parameters.AddWithValue("@eSite", game.site);
+                        command.Parameters.AddWithValue("@eDate", game.stringDate);
+                        command.Parameters.AddWithValue("@eName", game.eventName);
+                        
+
                         command.ExecuteNonQuery();
                         index++;
 
@@ -158,7 +133,6 @@ namespace ChessBrowser.Components.Pages
             // Build up this string containing the results from your query
             string parsedResult = "";
 
-            string query = "SELECT  ";
 
             // Use this to count the number of rows returned by your query
             // (see below return statement)
@@ -171,127 +145,52 @@ namespace ChessBrowser.Components.Pages
                     MySqlCommand command;
                     // Open a connection
                     conn.Open();
-                    if (white != "" && black != "")
+                    if (white != "" && black != "") // Case when user requests data for the white and the black player
                     {
                         command = conn.CreateCommand();
                         command.CommandText = "SELECT * FROM Games JOIN Events ON Games.eID = Events.eID WHERE WhitePlayer IN (SELECT pID FROM Players WHERE Name = @whiteName) " +
-                                              "OR BlackPlayer IN (SELECT pID FROM Players WHERE Name = @blackName)";
+                                              "AND BlackPlayer IN (SELECT pID FROM Players WHERE Name = @blackName)";
                         command.Parameters.AddWithValue("@whiteName", white);
                         command.Parameters.AddWithValue("@blackName", black);
-                        if (opening != "")
-                        {
-                            command.CommandText += " AND Moves LIKE @openingMove";
-                            command.Parameters.AddWithValue("@openingMove", opening + "%");
-                        }
-                        if (winner != "" && winner != "Any")
-                        {
-                            command.CommandText += " AND Result = @result";
-                            command.Parameters.AddWithValue("@result", winner);
-                        }
-                        if (useDate)
-                        {
-                            command.CommandText += " AND Date > @startDate AND Date < @endDate";
-                            command.Parameters.AddWithValue("@startDate", start);
-                            command.Parameters.AddWithValue("@endDate", end);
-                        }
-                        command.CommandText += ";";
+                        checkModifiers(opening, command, winner, useDate, start, end);
                         MySqlDataReader reader = command.ExecuteReader();
-
                         while (reader.Read())
                         {
-                            parsedResult += "Event: " + reader["Name"] + "\n";
-                            parsedResult += "Site: " + reader["Site"] + "\n";
-                            parsedResult += "Date: " + reader["Date"] + "\n";
-                            parsedResult += "White: " + white + " (" + reader["WhitePlayer"] + ") " + "\n";
-                            parsedResult += "Black: " + black + " (" + reader["BlackPlayer"] + ") " + "\n";
-                            parsedResult += "Result: " + reader["result"] + "\n";
-                            if (showMoves)
-                                parsedResult += reader["moves"] + "\n";
-                            parsedResult += "\n";
-                            numRows++;
+                            parsedResult += buildQueryResult(reader, showMoves, white, black, ref numRows);
                         }
+
                     }
 
-                    else if (white != "")
+                    else if (white != "") // Case when user requests data for the white player only
                     {
                         command = conn.CreateCommand();
                         command.CommandText = "SELECT *, Players.Name AS pName FROM Games JOIN Events ON Events.eID = Games.eID JOIN Players ON Games.BlackPlayer = Players.pID WHERE WhitePlayer IN (SELECT pID FROM Players WHERE Name = @whiteName)";
 
                         command.Parameters.AddWithValue("@whiteName", white);
 
-                        if (opening != "")
-                        {
-                            command.CommandText += " AND Moves LIKE @openingMove";
-                            command.Parameters.AddWithValue("@openingMove", opening + "%");
-                        }
-                        if (winner != "Any" && winner != "")
-                        {
-                            command.CommandText += " AND Result = @result";
-                            command.Parameters.AddWithValue("@result", winner);
-                        }
-
-                        if (useDate)
-                        {
-                            command.CommandText += " AND Date > @startDate AND Date < @endDate";
-                            command.Parameters.AddWithValue("@startDate", start);
-                            command.Parameters.AddWithValue("@endDate", end);
-                        }
-                        command.CommandText += ";";
+                        checkModifiers(opening, command, winner, useDate, start, end);
                         MySqlDataReader reader = command.ExecuteReader();
-
                         while (reader.Read())
                         {
-                            parsedResult += "Event: " + reader["Name"] + "\n";
-                            parsedResult += "Site: " + reader["Site"] + "\n";
-                            parsedResult += "Date: " + reader["Date"] + "\n";
-                            parsedResult += "White: " + white + " (" + reader["WhitePlayer"] + ") " + "\n";
-                            parsedResult += "Black: " + reader["pName"] + " (" + reader["BlackPlayer"] + ") " + "\n";
-                            parsedResult += "Result: " + reader["result"] + "\n\n";
-                            if (showMoves)
-                                parsedResult += reader["moves"] + "\n";
-                            parsedResult += "\n";
-                            numRows++;
+                            parsedResult += buildQueryResult(reader, showMoves, white, reader["pName"].ToString(), ref numRows);
                         }
+
                     }
 
-                    else if (black != "")
+                    else if (black != "") // Case when user requests data for the black player only
                     {
                         command = conn.CreateCommand();
                         command.CommandText = "SELECT *, Players.Name AS pName FROM Games JOIN Events ON Events.eID = Games.eID JOIN Players ON Games.WhitePlayer = Players.pID WHERE BlackPlayer IN (SELECT pID FROM Players WHERE Name = @blackName)";
 
                         command.Parameters.AddWithValue("@blackName", black);
 
-                        if (opening != "")
-                        {
-                            command.CommandText += " AND Moves LIKE @openingMove";
-                            command.Parameters.AddWithValue("@openingMove", opening + "%");
-                        }
-                        if (winner != "Any" && winner != "")
-                        {
-                            command.CommandText += " AND Result = @result";
-                            command.Parameters.AddWithValue("@result", winner);
-                        }
-                        if (useDate)
-                        {
-                            command.CommandText += " AND Date > @startDate AND Date < @endDate";
-                            command.Parameters.AddWithValue("@startDate", start);
-                            command.Parameters.AddWithValue("@endDate", end);
-                        }
-                        command.CommandText += ";";
-                        MySqlDataReader reader = command.ExecuteReader();
+                        checkModifiers(opening, command, winner, useDate, start, end);
 
+                        
+                        MySqlDataReader reader = command.ExecuteReader();
                         while (reader.Read())
                         {
-                            parsedResult += "Event: " + reader["Name"] + "\n";
-                            parsedResult += "Site: " + reader["Site"] + "\n";
-                            parsedResult += "Date: " + reader["Date"] + "\n";
-                            parsedResult += "White: " + reader["pName"] + " (" + reader["WhitePlayer"] + ") " + "\n";
-                            parsedResult += "Black: " + black + " (" + reader["BlackPlayer"] + ") " + "\n";
-                            parsedResult += "Result: " + reader["result"] + "\n\n";
-                            if (showMoves)
-                                parsedResult += reader["moves"] + "\n";
-                            parsedResult += "\n";
-                            numRows++;
+                            parsedResult += buildQueryResult(reader, showMoves, reader["pName"].ToString(), black, ref numRows);
                         }
                     }
                 }
@@ -303,18 +202,65 @@ namespace ChessBrowser.Components.Pages
             return numRows + " results\n\n" + parsedResult + "\n";
         }
 
+       
         /// <summary>
-        /// Gets the name of a player with the given pID
+        /// Builds the result of the selected query
         /// </summary>
-        /// <param name="pID">The pID of the players</param>
-        /// <param name="conn">The connection string</param>
-        /// <returns></returns>
-        private string getPlayerName(string pID, MySqlConnection conn)
+        /// <param name="reader">Current data reader</param>
+        /// <param name="showMoves">The users choice of if they want the output to contain the moves of the game</param>
+        /// <param name="white">Name of white player</param>
+        /// <param name="black">Name of black player</param>
+        /// <param name="numRows">The number of rows returned</param>
+        /// <returns>One entry of the result as a string</returns>
+        private string buildQueryResult(MySqlDataReader reader, bool showMoves, string white, string black, ref int numRows)
         {
-            MySqlCommand command = conn.CreateCommand();
-            command.CommandText = "SELECT Name FROM Players WHERE pID = " + pID + ";";
-            MySqlDataReader reader = command.ExecuteReader();
-            return (string)reader["Name"];
+            string result = "";
+
+            
+                result += "Event: " + reader["Name"] + "\n";
+                result += "Site: " + reader["Site"] + "\n";
+                result += "Date: " + reader["Date"] + "\n";
+                result += "White: " + white + " (" + reader["WhitePlayer"] + ") " + "\n";
+                result += "Black: " + black + " (" + reader["BlackPlayer"] + ") " + "\n";
+                result += "Result: " + reader["result"] + "\n\n";
+                if (showMoves)
+                    result += reader["moves"] + "\n";
+                result += "\n";
+                numRows++;
+            
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Checks the modifiers of user query. Modifies the sql query to reflect the modifier choices
+        /// </summary>
+        /// <param name="opening">Opening move</param>
+        /// <param name="command">Current command</param>
+        /// <param name="winner">Selected winner</param>
+        /// <param name="useDate">choice to filter by date</param>
+        /// <param name="start">Start date of filter (if applicable)</param>
+        /// <param name="end">End date of filter (if applicable)</param>
+        private void checkModifiers(string opening, MySqlCommand command, string winner, bool useDate, DateTime start, DateTime end)
+        {
+            if (opening != "")
+            {
+                command.CommandText += " AND Moves LIKE @openingMove";
+                command.Parameters.AddWithValue("@openingMove", opening + "%");
+            }
+            if (winner != "" && winner != "Any")
+            {
+                command.CommandText += " AND Result = @result";
+                command.Parameters.AddWithValue("@result", winner);
+            }
+            if (useDate)
+            {
+                command.CommandText += " AND Date > @startDate AND Date < @endDate";
+                command.Parameters.AddWithValue("@startDate", start);
+                command.Parameters.AddWithValue("@endDate", end);
+            }
+            command.CommandText += ";";
         }
 
         /// <summary>

@@ -58,7 +58,7 @@ namespace ChessBrowser.Components
         /// <param name="game"> The game object</param>
         private void populateAtribute(string line, ChessGame game)
         {
-            string dataType = line.Substring(1, 10);
+            string dataType = line.Substring(1, 10); // all info on type will be contained in the first few characters of the striing
             if (dataType.Contains("Event "))
                 game.eventName = getValue(line);
             else if (dataType.Contains("Site"))
@@ -103,9 +103,10 @@ namespace ChessBrowser.Components
         {
             string dataType = line.Substring(1, 10);
             int index = 0;
+            // finds the index of the first '"' character
             for (int i = 0; i < line.Length; i++)
             {
-                if (line[i] == '"')
+                if (line[i] == '"') 
                 {
                     index = i;
                     break;

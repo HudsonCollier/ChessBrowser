@@ -11,21 +11,20 @@ namespace ChessBrowser.Components
     /// </summary>
     public class ChessGame
     {
-        public string whitePlayer { get; set; }
-        public string blackPlayer { get; set; }
-        public string eventName { get; set; }
-        public string site { get; set; }
-        public string round { get; set; }
-        public int whiteElo { get; set; }
-        public int blackElo { get; set; }
+        public string whitePlayer { get; set; } = "";
+        public string blackPlayer { get; set; } = "";
+        public string eventName { get; set; } = "";
+        public string site { get; set; } = "";
+        public string round { get; set; } = "";
+        public int whiteElo { get; set; } = 0;
+        public int blackElo { get; set; } = 0;
         public char result { get; set; }
-        public string stringDate { get; set; }
-        public string moves { get; set; }
-        public ChessGame() {}
+        public string stringDate { get; set; } = "";
+        public string moves { get; set; } = "";
 
-        //public string printEvent()
-        //{
-        //    return this.eventName;
-        //}
+        /// <summary>
+        /// Constructor for Chessgame object. All values set to 0/empty strings when exiting.
+        /// </summary>
+        public ChessGame() {}
     }
 }
